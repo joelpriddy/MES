@@ -1,0 +1,1 @@
+namespace PA.Catalog.Data { public class Class1 { } }

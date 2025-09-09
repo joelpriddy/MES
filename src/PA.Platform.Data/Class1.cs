@@ -1,0 +1,1 @@
+namespace PA.Platform.Data { public class Class1 { } }

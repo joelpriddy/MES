@@ -1,0 +1,1 @@
+namespace PA.Inventory.Tests { public class Class1 { } }

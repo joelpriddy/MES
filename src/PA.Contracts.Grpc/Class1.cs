@@ -1,0 +1,1 @@
+namespace PA.Contracts.Grpc { public class Class1 { } }

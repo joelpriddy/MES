@@ -1,0 +1,15 @@
+
+bin/
+obj/
+out/
+*.user
+*.suo
+.vscode/
+.idea/
+*.log
+logs/
+node_modules/
+dist/
+*.lock
+.DS_Store
+Thumbs.db

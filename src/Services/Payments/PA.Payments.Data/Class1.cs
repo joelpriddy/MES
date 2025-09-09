@@ -1,0 +1,1 @@
+namespace PA.Payments.Data { public class Class1 { } }

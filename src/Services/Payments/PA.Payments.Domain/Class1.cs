@@ -1,0 +1,1 @@
+namespace PA.Payments.Domain { public class Class1 { } }

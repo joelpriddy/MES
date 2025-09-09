@@ -1,0 +1,1 @@
+namespace PA.Manufacturing.Api { public class Class1 { } }

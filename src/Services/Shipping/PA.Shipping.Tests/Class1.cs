@@ -1,0 +1,1 @@
+namespace PA.Shipping.Tests { public class Class1 { } }

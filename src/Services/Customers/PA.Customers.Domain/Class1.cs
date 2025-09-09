@@ -1,0 +1,1 @@
+namespace PA.Customers.Domain { public class Class1 { } }

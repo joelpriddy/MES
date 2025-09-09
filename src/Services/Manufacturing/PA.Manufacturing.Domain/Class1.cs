@@ -1,0 +1,1 @@
+namespace PA.Manufacturing.Domain { public class Class1 { } }

@@ -1,0 +1,1 @@
+namespace PA.Catalog.Api { public class Class1 { } }

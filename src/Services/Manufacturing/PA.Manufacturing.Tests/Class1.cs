@@ -1,0 +1,1 @@
+namespace PA.Manufacturing.Tests { public class Class1 { } }

@@ -1,0 +1,1 @@
+namespace PA.Shipping.Data { public class Class1 { } }

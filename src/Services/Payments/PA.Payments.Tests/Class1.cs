@@ -1,0 +1,1 @@
+namespace PA.Payments.Tests { public class Class1 { } }

@@ -1,0 +1,1 @@
+namespace PA.Shipping.Domain { public class Class1 { } }

@@ -1,0 +1,13 @@
+
+bin/
+obj/
+out/
+*.user
+*.suo
+.vscode/
+.idea/
+**/node_modules/
+**/dist/
+.git
+.gitignore
+Dockerfile.*.local

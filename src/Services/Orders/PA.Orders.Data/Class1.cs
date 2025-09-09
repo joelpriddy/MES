@@ -1,0 +1,1 @@
+namespace PA.Orders.Data { public class Class1 { } }

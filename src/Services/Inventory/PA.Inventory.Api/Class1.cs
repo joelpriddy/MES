@@ -1,0 +1,1 @@
+namespace PA.Inventory.Api { public class Class1 { } }

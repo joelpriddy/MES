@@ -1,0 +1,1 @@
+namespace PA.Customers.Api { public class Class1 { } }

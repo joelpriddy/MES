@@ -1,0 +1,1 @@
+namespace PA.Manufacturing.Data { public class Class1 { } }
