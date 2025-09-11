@@ -13,3 +13,4 @@ dist/
 *.lock
 .DS_Store
 Thumbs.db
+.vs/

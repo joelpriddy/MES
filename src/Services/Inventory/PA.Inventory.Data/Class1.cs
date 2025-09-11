@@ -1,1 +1,0 @@
-namespace PA.Inventory.Data { public class Class1 { } }

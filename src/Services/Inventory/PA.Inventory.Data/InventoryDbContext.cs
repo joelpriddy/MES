@@ -1,13 +1,37 @@
 using Microsoft.EntityFrameworkCore;
+using PA.Inventory.Domain.Models;
 
-namespace PA.Inventory.Data {
-    public class InventoryDbContext : DbContext {
+namespace PA.Inventory.Data
+{
+    public class InventoryDbContext : DbContext
+    {
         public InventoryDbContext(DbContextOptions<InventoryDbContext> options) : base(options) { }
-        protected override void OnModelCreating(ModelBuilder modelBuilder) {
+
+        public DbSet<StockItem> StockItems => Set<StockItem>();
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
             base.OnModelCreating(modelBuilder);
-            // TODO: configure entities (EF Core Fluent API)
+
+            modelBuilder.Entity<StockItem>(e =>
+            {
+                e.ToTable("stock_item");
+                e.HasKey(x => x.Id);
+
+                e.Property(x => x.LotNumber)
+                    .HasMaxLength(64);
+
+                e.Property(x => x.OnHand)
+                    .HasPrecision(18, 3);
+
+                e.Property(x => x.Reserved)
+                    .HasPrecision(18, 3);
+
+                e.HasIndex(x => new { x.ProductId, x.SiteId, x.LotNumber });
+
+                e.Property(x => x.UpdatedOn)
+                    .HasConversion(v => v, v => DateTime.SpecifyKind(v.DateTime, DateTimeKind.Utc));
+            });
         }
-        // TODO: add DbSet<T> for your entities, e.g.:
-        // public DbSet<Product> Products => Set<Product>();
     }
 }

@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "PA.Orders.Api": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:43047;http://localhost:43048"
+    }
+  }
+}

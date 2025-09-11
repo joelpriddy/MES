@@ -1,5 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Grpc.Tools" Version="2.67.0" PrivateAssets="All" />
+        <PackageReference Include="Grpc.Core.Api" Version="2.67.0" />
+        <PackageReference Include="Google.Protobuf" Version="3.25.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Generate both client & server stubs in this assembly -->
+        <Protobuf Include="proto\catalog.proto" GrpcServices="Server,Client" />
+        <Protobuf Include="proto\orders.proto"  GrpcServices="Server,Client" />
+    </ItemGroup>
 </Project>

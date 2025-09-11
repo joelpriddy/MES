@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "PA.Gateway.Api": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:43055;http://localhost:43056"
+    }
+  }
+}

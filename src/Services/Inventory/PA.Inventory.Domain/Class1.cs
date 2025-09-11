@@ -1,1 +1,0 @@
-namespace PA.Inventory.Domain { public class Class1 { } }

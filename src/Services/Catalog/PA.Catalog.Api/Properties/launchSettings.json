@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "PA.Catalog.Api": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:42861;http://localhost:42862"
+    }
+  }
+}
