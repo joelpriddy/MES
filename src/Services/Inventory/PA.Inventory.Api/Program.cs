@@ -44,6 +44,7 @@ app.MapGrpcReflectionService();
 app.MapHealthChecks("/healthz");
 
 //Endpoints
+//GET
 app.MapGet("/", () => $"Inventory service running ({Assembly.GetExecutingAssembly().GetName().Name}).");
 app.MapGet("/stock", async (InventoryDbContext db) =>
 {
@@ -57,7 +58,19 @@ app.MapGet("/stock", async (InventoryDbContext db) =>
 
     return Results.Ok(list);
 });
+app.MapGet("/stock/available/{productId:long}/{siteId:long}", async (InventoryDbContext db, long productId, long siteId) =>
+{
+    var available = await db.StockItems
+        .AsNoTracking()
+        .Where(x => x.ProductId == productId && x.SiteId == siteId)
+        .Select(x => x.OnHand - x.Reserved)
+        .SumAsync();
 
+    return Results.Ok(new { productId, siteId, available });
+})
+.Produces(StatusCodes.Status200OK);
+
+//POST
 app.MapPost("/stock/intake", async (InventoryDbContext db, StockIntakeDto body) =>
 {
     if (body.Quantity <= 0) { return Results.BadRequest("Quantity must be greater than zero."); }
