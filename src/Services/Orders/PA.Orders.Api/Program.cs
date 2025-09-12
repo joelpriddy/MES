@@ -28,8 +28,7 @@ builder.Services.AddSwaggerGen(o =>
     o.SwaggerDoc("v1", new OpenApiInfo { Title = "PA.Orders.Api", Version = "v1" });
 });
 
-builder.Services.AddDbContext<PA.Orders.Data.OrdersDbContext>(opt =>
-    opt.UseMySql(cs, ServerVersion.AutoDetect(cs)));
+builder.Services.AddDbContext<PA.Orders.Data.OrdersDbContext>(opt => opt.UseMySql(cs, ServerVersion.AutoDetect(cs)));
 
 var app = builder.Build();
 
@@ -87,6 +86,21 @@ app.MapPost("/orders", async (OrdersDbContext db, OrderCreateDto body) =>
 .Produces<OrderDto>(StatusCodes.Status201Created)
 .Produces(StatusCodes.Status400BadRequest);
 
+//PUT
+app.MapPut("/orders/{id:long}/ship", async (OrdersDbContext db, long id) =>
+{
+    var order = await db.Orders.Include(o => o.Lines).FirstOrDefaultAsync(o => o.Id == id);
+    if (order is null) { return Results.NotFound(); }
+
+    order.Status = "Shipped";
+    order.ShippedOn = DateTimeOffset.UtcNow;
+
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new OrderDto(order));
+})
+.Produces<OrderDto>(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status404NotFound);
 
 app.UseSwagger();
 app.UseSwaggerUI(c =>
