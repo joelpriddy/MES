@@ -4,6 +4,7 @@ using Microsoft.OpenApi.Models;
 using PA.Catalog.Api.Models;
 using PA.Catalog.Api.Services;
 using PA.Catalog.Data;
+using PA.Catalog.Data.Seed;
 using PA.Catalog.Domain.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,6 +34,15 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
+// Ensure DB is up-to-date and seed initial products
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+
+    db.Database.Migrate();
+    CatalogSeeder.SeedAsync(db).GetAwaiter().GetResult();
+}
+
 // Swagger middleware
 app.UseSwagger();
 app.UseSwaggerUI(c =>
@@ -43,7 +53,7 @@ app.UseSwaggerUI(c =>
 // gRPC endpoints (reflection + service)
 app.MapGrpcReflectionService();
 app.MapHealthChecks("/healthz");
-// app.MapGrpcService<CatalogGrpcService>(); // uncomment when service is ready
+app.MapGrpcService<CatalogGrpcService>();
 
 // Minimal APIs
 app.MapGet("/", () => "Catalog service running (PA.Catalog.Api).");
