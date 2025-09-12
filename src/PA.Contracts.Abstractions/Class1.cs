@@ -1,1 +1,0 @@
-namespace PA.Contracts.Abstractions { public class Class1 { } }

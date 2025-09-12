@@ -1,1 +1,0 @@
-namespace PA.Contracts.Models { public class Class1 { } }
