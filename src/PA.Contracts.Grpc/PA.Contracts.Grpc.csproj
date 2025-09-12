@@ -4,14 +4,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Grpc.Tools" Version="2.67.0" PrivateAssets="All" />
-        <PackageReference Include="Grpc.Core.Api" Version="2.67.0" />
-        <PackageReference Include="Google.Protobuf" Version="3.25.3" />
+        <PackageReference Include="Grpc.Tools" Version="2.72.0" PrivateAssets="All" />
+        <PackageReference Include="Grpc.Core.Api" Version="2.71.0" />
+        <PackageReference Include="Google.Protobuf" Version="3.32.1" />
     </ItemGroup>
 
     <ItemGroup>
         <!-- Generate both client & server stubs in this assembly -->
         <Protobuf Include="proto\catalog.proto" GrpcServices="Server,Client" />
-        <Protobuf Include="proto\orders.proto"  GrpcServices="Server,Client" />
+        <Protobuf Include="proto\orders.proto" GrpcServices="Server,Client" />
     </ItemGroup>
 </Project>

@@ -2,9 +2,9 @@ using System.Reflection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 using PA.Orders.Api.Models;
 using PA.Orders.Data;
-using Microsoft.OpenApi.Models;
 using PA.Orders.Domain.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -43,6 +43,20 @@ app.MapGet("/orders", async (OrdersDbContext db) =>
 
     return Results.Ok(list);
 });
+
+app.MapGet("/orders/{id:long}", async (OrdersDbContext db, long id) =>
+{
+    var order = await db.Orders
+        .AsNoTracking()
+        .Include(o => o.Lines)
+        .FirstOrDefaultAsync(o => o.Id == id);
+
+    if (order is null) { return Results.NotFound(); }
+
+    return Results.Ok(new OrderDto(order));
+})
+.Produces<OrderDto>(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status404NotFound);
 
 //POST
 app.MapPost("/orders", async (OrdersDbContext db, OrderCreateDto body) =>
@@ -101,6 +115,27 @@ app.MapPut("/orders/{id:long}/ship", async (OrdersDbContext db, long id) =>
 })
 .Produces<OrderDto>(StatusCodes.Status200OK)
 .Produces(StatusCodes.Status404NotFound);
+
+app.MapPut("/orders/{id:long}/pay", async (OrdersDbContext db, long id) =>
+{
+    var order = await db.Orders.Include(o => o.Lines).FirstOrDefaultAsync(o => o.Id == id);
+    if (order is null) { return Results.NotFound(); }
+
+    if (order.Status == "Paid" || order.Status == "Shipped")
+    {
+        return Results.Conflict($"Order {id} is already {order.Status}.");
+    }
+
+    order.Status = "Paid";
+    order.PaidOn = DateTimeOffset.UtcNow;
+
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new OrderDto(order));
+})
+.Produces<OrderDto>(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status404NotFound)
+.Produces(StatusCodes.Status409Conflict);
 
 app.UseSwagger();
 app.UseSwaggerUI(c =>
