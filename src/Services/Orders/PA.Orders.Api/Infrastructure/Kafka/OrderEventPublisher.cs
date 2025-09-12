@@ -65,12 +65,19 @@ namespace PA.Orders.Api.Infrastructure.Kafka
                 siteId = order.SiteId,
                 total = order.Total,
                 status = order.Status,
-                shippedOn = order.ShippedOn
+                shippedOn = order.ShippedOn,
+                lines = order.Lines.Select(l => new
+                {
+                    productId = l.ProductId,
+                    quantity = l.Quantity,
+                    unitPrice = l.UnitPrice
+                }).ToList()
             };
             var value = JsonSerializer.Serialize(payload, _json);
             var message = new Message<string, string> { Key = order.Id.ToString(), Value = value };
             var result = await _producer.ProduceAsync(_options.TopicOrderShipped, message, ct);
         }
+
 
         public void Dispose()
         {
