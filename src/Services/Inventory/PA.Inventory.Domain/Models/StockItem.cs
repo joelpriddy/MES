@@ -1,3 +1,5 @@
+using System;
+
 namespace PA.Inventory.Domain.Models
 {
     public class StockItem

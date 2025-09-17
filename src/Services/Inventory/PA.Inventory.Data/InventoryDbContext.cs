@@ -1,3 +1,4 @@
+using System;
 using Microsoft.EntityFrameworkCore;
 using PA.Inventory.Domain.Models;
 
