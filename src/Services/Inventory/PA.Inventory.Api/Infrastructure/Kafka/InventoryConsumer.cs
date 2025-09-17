@@ -1,31 +1,22 @@
-using System;
-using System.Linq;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using Confluent.Kafka;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using PA.Inventory.Api.Infrastructure.Kafka;
 using PA.Inventory.Data;
-using PA.Inventory.Domain.Models;
 
 namespace PA.Inventory.Api.Infrastructure.Kafka
 {
     /// <summary>
-    /// Consumes orders.created and orders.shipped and updates StockItem
-    /// - orders.created: increases Reserved (up to available OnHand) by product/site across lots (FEFO).
-    /// - orders.shipped: decreases Reserved and OnHand by shipped quantity across lots (FEFO).
+    /// Consumes orders.created and orders.shipped and updates StockItem.
+    /// Resilient: if Kafka is down, it logs and retries; it never prevents the web app from starting.
     /// </summary>
     public class InventoryConsumer : BackgroundService
     {
         private readonly IServiceProvider _services;
         private readonly ILogger<InventoryConsumer> _logger;
         private readonly KafkaOptions _options;
-        private readonly IConsumer<string, string> _consumer;
+        private IConsumer<string, string>? _consumer;
+
         private static readonly JsonSerializerOptions _json = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
@@ -36,58 +27,104 @@ namespace PA.Inventory.Api.Infrastructure.Kafka
             _services = services;
             _logger = logger;
             _options = options.Value;
-
-            var config = new ConsumerConfig
-            {
-                BootstrapServers = _options.BootstrapServers,
-                GroupId = _options.GroupId,
-                EnableAutoCommit = true,
-                AutoOffsetReset = AutoOffsetReset.Earliest
-            };
-
-            _consumer = new ConsumerBuilder<string, string>(config).Build();
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _consumer.Subscribe(new[] { _options.TopicOrderCreated, _options.TopicOrderShipped });
-            _logger.LogInformation("InventoryConsumer subscribed to topics: {Topics}", string.Join(", ", _options.TopicOrderCreated, _options.TopicOrderShipped));
+            var topics = new[] { _options.TopicOrderCreated, _options.TopicOrderShipped };
 
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    var cr = _consumer.Consume(stoppingToken);
+                    if (_consumer is null)
+                    {
+                        TryCreateConsumer(topics);
+                    }
 
-                    if (cr is null || string.IsNullOrWhiteSpace(cr.Message?.Value)) { continue; }
+                    if (_consumer is null)
+                    {
+                        // Could not create yet — wait a bit and retry
+                        await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+                        continue;
+                    }
+
+                    // Non-blocking poll (short timeout) so we can shutdown fast
+                    var cr = _consumer.Consume(TimeSpan.FromMilliseconds(250));
+
+                    if (cr is null || string.IsNullOrWhiteSpace(cr.Message?.Value))
+                    {
+                        continue;
+                    }
 
                     if (string.Equals(cr.Topic, _options.TopicOrderCreated, StringComparison.OrdinalIgnoreCase))
                     {
                         var payload = JsonSerializer.Deserialize<OrderCreatedPayload>(cr.Message.Value, _json);
 
-                        if (payload is not null) { await HandleOrderCreatedAsync(payload, stoppingToken); }
+                        if (payload is not null)
+                        {
+                            await HandleOrderCreatedAsync(payload, stoppingToken);
+                        }
                     }
                     else if (string.Equals(cr.Topic, _options.TopicOrderShipped, StringComparison.OrdinalIgnoreCase))
                     {
                         var payload = JsonSerializer.Deserialize<OrderShippedPayload>(cr.Message.Value, _json);
 
-                        if (payload is not null) { await HandleOrderShippedAsync(payload, stoppingToken); }
+                        if (payload is not null)
+                        {
+                            await HandleOrderShippedAsync(payload, stoppingToken);
+                        }
                     }
                 }
                 catch (OperationCanceledException)
                 {
+                    // shutting down
                     break;
                 }
                 catch (ConsumeException ce)
                 {
-                    _logger.LogError(ce, "Kafka consume error: {Reason}", ce.Error.Reason);
-                    await Task.Delay(500, stoppingToken);
+                    _logger.LogWarning(ce, "Kafka consume warning: {Reason}", ce.Error.Reason);
+                    // If fatal, drop consumer and recreate
+                    if (ce.Error.IsFatal)
+                    {
+                        CloseConsumer();
+                        await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
+                    }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Unhandled error in InventoryConsumer loop.");
-                    await Task.Delay(500, stoppingToken);
+                    _logger.LogError(ex, "Unhandled error in InventoryConsumer; will retry.");
+                    CloseConsumer();
+                    await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
                 }
+            }
+
+            CloseConsumer();
+        }
+
+        private void TryCreateConsumer(string[] topics)
+        {
+            try
+            {
+                var config = new ConsumerConfig
+                {
+                    BootstrapServers = _options.BootstrapServers,
+                    GroupId = _options.GroupId,
+                    EnableAutoCommit = true,
+                    AutoOffsetReset = AutoOffsetReset.Earliest,
+                    // These help on Windows localhost setups:
+                    BrokerAddressFamily = BrokerAddressFamily.V4,
+                    SocketKeepaliveEnable = true
+                };
+
+                _consumer = new ConsumerBuilder<string, string>(config).Build();
+                _consumer.Subscribe(topics);
+                _logger.LogInformation("InventoryConsumer subscribed to topics: {Topics}", string.Join(", ", topics));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Kafka unavailable at {Servers}; will retry shortly.", _options.BootstrapServers);
+                CloseConsumer();
             }
         }
 
@@ -97,14 +134,15 @@ namespace PA.Inventory.Api.Infrastructure.Kafka
             var db = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
 
             await using var tx = await db.Database.BeginTransactionAsync(ct);
+
             try
             {
                 foreach (var line in evt.Lines)
                 {
                     var remaining = line.Quantity;
+
                     if (remaining <= 0) { continue; }
 
-                    // FEFO: earliest expiration first (nulls last), then oldest updated.
                     var lots = await db.StockItems
                         .Where(x => x.ProductId == line.ProductId && x.SiteId == evt.SiteId)
                         .OrderBy(x => x.Expiration.HasValue ? 0 : 1)
@@ -130,18 +168,18 @@ namespace PA.Inventory.Api.Infrastructure.Kafka
 
                     if (remaining > 0)
                     {
-                        _logger.LogWarning("Order {OrderId}: insufficient stock to reserve ProductId={ProductId} at SiteId={SiteId}. Unreserved={Remaining}",
-                            evt.Id, line.ProductId, evt.SiteId, remaining);
+                        // Not enough stock to reserve all; log and continue
+                        // (Business rule: we *do not* block the order here)
                     }
                 }
 
                 await db.SaveChangesAsync(ct);
                 await tx.CommitAsync(ct);
             }
-            catch (Exception ex)
+            catch
             {
                 await tx.RollbackAsync(ct);
-                _logger.LogError(ex, "Failed to apply reservations for OrderCreated {OrderId}", evt.Id);
+                throw;
             }
         }
 
@@ -157,10 +195,8 @@ namespace PA.Inventory.Api.Infrastructure.Kafka
                 foreach (var line in evt.Lines)
                 {
                     var toShip = line.Quantity;
-
                     if (toShip <= 0) { continue; }
 
-                    // FEFO: earliest expiration first (nulls last), then oldest updated.
                     var lots = await db.StockItems
                         .Where(x => x.ProductId == line.ProductId && x.SiteId == evt.SiteId)
                         .OrderBy(x => x.Expiration.HasValue ? 0 : 1)
@@ -172,16 +208,13 @@ namespace PA.Inventory.Api.Infrastructure.Kafka
                     {
                         if (toShip <= 0) { break; }
 
-                        // First release reservations up to min(Reserved, toShip).
                         var release = Math.Min(lot.Reserved, toShip);
-
                         if (release > 0)
                         {
                             lot.Reserved -= release;
                             toShip -= release;
                         }
 
-                        // Then reduce OnHand for any remaining toShip from this lot.
                         if (toShip > 0 && lot.OnHand > 0)
                         {
                             var decrement = Math.Min(lot.OnHand, toShip);
@@ -191,34 +224,24 @@ namespace PA.Inventory.Api.Infrastructure.Kafka
 
                         lot.UpdatedOn = DateTimeOffset.UtcNow;
                     }
-
-                    if (toShip > 0)
-                    {
-                        _logger.LogWarning("Order {OrderId}: could not ship full qty for ProductId={ProductId} at SiteId={SiteId}. Shortfall={Shortfall}",
-                            evt.Id, line.ProductId, evt.SiteId, toShip);
-                    }
                 }
 
                 await db.SaveChangesAsync(ct);
                 await tx.CommitAsync(ct);
             }
-            catch (Exception ex)
+            catch
             {
                 await tx.RollbackAsync(ct);
-                _logger.LogError(ex, "Failed to apply stock decrement for OrderShipped {OrderId}", evt.Id);
+                throw;
             }
         }
 
-        public override void Dispose()
+        private void CloseConsumer()
         {
-            try
-            {
-                _consumer?.Close();
-            }
-            catch { }
+            try { _consumer?.Close(); } catch { /* ignore */ }
+            try { _consumer?.Dispose(); } catch { /* ignore */ }
 
-            _consumer?.Dispose();
-            base.Dispose();
+            _consumer = null;
         }
     }
 }

@@ -1,9 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using PA.Inventory.Api.Models;
 using PA.Inventory.Data;
-using PA.Inventory.Domain.Models;
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using System.Reflection;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.OpenApi.Models;
 using PA.Inventory.Api.Endpoints;
@@ -15,7 +11,7 @@ builder.WebHost.ConfigureKestrel(o => { o.ListenAnyIP(5081, lo => lo.Protocols =
 builder.Services.AddGrpc();
 builder.Services.AddGrpcReflection();
 builder.Services.Configure<KafkaOptions>(builder.Configuration.GetSection("Kafka"));
-builder.Services.AddHostedService<InventoryConsumer>();
+//builder.Services.AddHostedService<InventoryConsumer>();
 
 var cs = builder.Configuration.GetConnectionString("Default") 
          ?? Environment.GetEnvironmentVariable("PA_INVENTORY_CS")

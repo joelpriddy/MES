@@ -20,6 +20,7 @@ namespace PA.Inventory.Api.Endpoints
         private static WebApplication AddGets(this WebApplication app)
         {
             app.MapGet("/", () => $"Inventory service running ({Assembly.GetExecutingAssembly().GetName().Name}).");
+
             app.MapGet("/stock", async (InventoryDbContext db) =>
             {
                 var list = await db.StockItems
