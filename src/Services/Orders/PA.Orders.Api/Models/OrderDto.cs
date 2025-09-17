@@ -1,4 +1,7 @@
 using PA.Orders.Domain.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace PA.Orders.Api.Models
 {

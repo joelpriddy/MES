@@ -4,6 +4,12 @@ using PA.Orders.Api.Infrastructure.Kafka;
 using PA.Orders.Api.Models;
 using PA.Orders.Data;
 using PA.Orders.Domain.Models;
+using Microsoft.AspNetCore.Builder; // WebApplication
+using Microsoft.AspNetCore.Http;    // Results
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using System;
 
 namespace PA.Orders.Api.Endpoints
 {

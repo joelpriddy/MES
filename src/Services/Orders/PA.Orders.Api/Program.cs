@@ -5,13 +5,20 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using PA.Orders.Api.Infrastructure.Kafka;
 using PA.Orders.Api.Endpoints;
+using System;
+using Microsoft.AspNetCore.Builder;
 
 var builder = WebApplication.CreateBuilder(args);
+var httpPortEnv = Environment.GetEnvironmentVariable("HTTP_PORT");
+var httpPort = 5082;
+
+if (int.TryParse(httpPortEnv, out var parsed)) { httpPort = parsed; }
 
 builder.WebHost.ConfigureKestrel(o =>
 {
-    o.ListenAnyIP(5082, lo => lo.Protocols = HttpProtocols.Http1AndHttp2);
+    o.ListenAnyIP(httpPort, lo => { lo.Protocols = HttpProtocols.Http1AndHttp2; });
 });
+
 
 // Config
 var cs = builder.Configuration.GetConnectionString("Default") 

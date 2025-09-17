@@ -6,12 +6,23 @@ using PA.Inventory.Api.Endpoints;
 using PA.Inventory.Api.Infrastructure.Kafka;
 
 var builder = WebApplication.CreateBuilder(args);
+var httpPortEnv = Environment.GetEnvironmentVariable("HTTP_PORT");
+var httpPort = 5081;
 
-builder.WebHost.ConfigureKestrel(o => { o.ListenAnyIP(5081, lo => lo.Protocols = HttpProtocols.Http1AndHttp2); });
+if (int.TryParse(httpPortEnv, out var parsed)) { httpPort = parsed; }
+
+builder.WebHost.ConfigureKestrel(o => 
+{ 
+    o.ListenAnyIP(httpPort, lo => { lo.Protocols = HttpProtocols.Http1AndHttp2; }); 
+});
+
 builder.Services.AddGrpc();
 builder.Services.AddGrpcReflection();
 builder.Services.Configure<InventoryKafkaOptions>(builder.Configuration.GetSection("Kafka"));
-//builder.Services.AddHostedService<InventoryConsumer>();
+
+var runKafkaConsumer = builder.Configuration.GetValue<bool>("RUN_KAFKA_CONSUMER");
+
+if (runKafkaConsumer) { builder.Services.AddHostedService<InventoryConsumer>(); }
 
 var cs = builder.Configuration.GetConnectionString("Default") 
          ?? Environment.GetEnvironmentVariable("PA_INVENTORY_CS")

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace PA.Orders.Api.Models
 {
     public class OrderCreateDto

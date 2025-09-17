@@ -2,6 +2,10 @@ using System.Text.Json;
 using Confluent.Kafka;
 using Microsoft.Extensions.Options;
 using PA.Orders.Domain.Models;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Linq;
 
 namespace PA.Orders.Api.Infrastructure.Kafka
 {

@@ -55,6 +55,38 @@ services:
       - mysql
       - redpanda
 
+  inventory-api:
+    build:
+      context: .
+      dockerfile: src/Services/Inventory/PA.Inventory.Api/Dockerfile
+    environment:
+      - HTTP_PORT=8080
+      - ConnectionStrings__Default=server=mysql;port=3306;database=pa_mes_inventory;user=root;password=root
+      - Kafka__BootstrapServers=redpanda:9092
+      - Kafka__GroupId=inventory-api
+      - RUN_KAFKA_CONSUMER=false
+    depends_on:
+      - mysql
+      - redpanda
+    ports:
+      - "5081:8080"
+
+  orders-api:
+    build:
+      context: .
+      dockerfile: src/Services/Orders/PA.Orders.Api/Dockerfile
+    environment:
+      - HTTP_PORT=8080
+      - ConnectionStrings__Default=server=mysql;port=3306;database=pa_mes_orders;user=root;password=root
+      - Kafka__BootstrapServers=redpanda:9092
+      - Kafka__GroupId=orders-api
+    depends_on:
+      - mysql
+      - redpanda
+    ports:
+      - "5082:8080"
+
+
 volumes:
   mysql_data:
   redpanda_data:

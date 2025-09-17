@@ -1,19 +1,24 @@
-# Build stage
+# ---- Build ----
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# copy solution & restore early (optional if you keep solution file at root)
-COPY . .
-RUN dotnet restore "src/Services/Orders/PA.Orders.Api/PA.Orders.Api.csproj"
+COPY PA.MES.sln ./
+COPY src/ ./src/
+COPY tests/ ./tests/
 
-# publish
-RUN dotnet publish "src/Services/Orders/PA.Orders.Api/PA.Orders.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
+WORKDIR /src/src/Services/Orders/PA.Orders.Api
+RUN dotnet restore
+RUN dotnet publish -c Release -o /app --no-restore
 
-# Runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+# ---- Run ----
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
-COPY --from=build /app/publish .
-# Health probe port
+COPY --from=build /app ./
+
+ENV HTTP_PORT=8080 \
+    ConnectionStrings__Default="server=mysql;port=3306;database=pa_mes_orders;user=root;password=root" \
+    Kafka__BootstrapServers="redpanda:9092" \
+    Kafka__GroupId="orders-api"
+
 EXPOSE 8080
-ENV ASPNETCORE_URLS=http://+:8080
 ENTRYPOINT ["dotnet", "PA.Orders.Api.dll"]
