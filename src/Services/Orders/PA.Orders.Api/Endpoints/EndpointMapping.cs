@@ -136,6 +136,24 @@ namespace PA.Orders.Api.Endpoints
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status409Conflict);
 
+            app.MapPut("/orders/{id:long}/cancel", async (OrdersDbContext db, long id, IOrderEventPublisher publisher) =>
+            {
+                var order = await db.Orders.Include(o => o.Lines).FirstOrDefaultAsync(o => o.Id == id);
+
+                if (order is null) { return Results.NotFound(); }
+                if (order.Status is "Shipped") { return Results.Conflict($"Order {id} is already Shipped and cannot be canceled."); }
+
+                order.Status = "Canceled";
+
+                await db.SaveChangesAsync();
+                await publisher.PublishOrderCanceledAsync(order);
+
+                return Results.Ok(new OrderDto(order));
+            })
+            .Produces<OrderDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict);
+
             return app;
         }
     }

@@ -17,7 +17,7 @@ builder.WebHost.ConfigureKestrel(o =>
 var cs = builder.Configuration.GetConnectionString("Default") 
          ?? Environment.GetEnvironmentVariable("PA_ORDERS_CS")
          ?? "server=localhost;port=3306;database=pa_mes_orders;user=root;password=root";
-builder.Services.Configure<KafkaOptions>(builder.Configuration.GetSection("Kafka"));
+builder.Services.Configure<OrdersKafkaOptions>(builder.Configuration.GetSection("Kafka"));
 builder.Services.AddSingleton<IOrderEventPublisher, OrderEventPublisher>();
 builder.Services.AddGrpc();
 builder.Services.AddGrpcReflection();

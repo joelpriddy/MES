@@ -1,1 +1,0 @@
-namespace PA.Platform.Messaging { public class Class1 { } }

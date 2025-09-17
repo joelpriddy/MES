@@ -9,18 +9,19 @@ namespace PA.Orders.Api.Infrastructure.Kafka
     {
         Task PublishOrderCreatedAsync(Order order, CancellationToken ct = default);
         Task PublishOrderShippedAsync(Order order, CancellationToken ct = default);
+        Task PublishOrderCanceledAsync(Order order, CancellationToken ct = default);
     }
 
     public class OrderEventPublisher : IOrderEventPublisher
     {
         private readonly IProducer<string, string> _producer;
-        private readonly KafkaOptions _options;
+        private readonly OrdersKafkaOptions _options;
         private readonly JsonSerializerOptions _json = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
 
-        public OrderEventPublisher(IOptions<KafkaOptions> options)
+        public OrderEventPublisher(IOptions<OrdersKafkaOptions> options)
         {
             _options = options.Value;
 
@@ -78,6 +79,28 @@ namespace PA.Orders.Api.Infrastructure.Kafka
             var result = await _producer.ProduceAsync(_options.TopicOrderShipped, message, ct);
         }
 
+        public async Task PublishOrderCanceledAsync(Order order, CancellationToken ct = default)
+        {
+            var payload = new
+            {
+                id = order.Id,
+                customerId = order.CustomerId,
+                siteId = order.SiteId,
+                total = order.Total,
+                status = order.Status,
+                canceledOn = DateTimeOffset.UtcNow,
+                lines = order.Lines.Select(l => new
+                {
+                    productId = l.ProductId,
+                    quantity = l.Quantity,
+                    unitPrice = l.UnitPrice
+                }).ToList()
+            };
+
+            var value = JsonSerializer.Serialize(payload, _json);
+            var message = new Message<string, string> { Key = order.Id.ToString(), Value = value };
+            await _producer.ProduceAsync(_options.TopicOrderCanceled, message, ct);
+        }
 
         public void Dispose()
         {

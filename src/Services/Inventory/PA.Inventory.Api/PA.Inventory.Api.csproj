@@ -10,6 +10,8 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.4" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\PA.Contracts.Models\PA.Contracts.Models.csproj" />
+    <ProjectReference Include="..\..\..\PA.Platform.Messaging\PA.Platform.Messaging.csproj" />
     <ProjectReference Include="..\PA.Inventory.Data\PA.Inventory.Data.csproj" />
     <ProjectReference Include="..\PA.Inventory.Domain\PA.Inventory.Domain.csproj" />
   </ItemGroup>

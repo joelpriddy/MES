@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.ConfigureKestrel(o => { o.ListenAnyIP(5081, lo => lo.Protocols = HttpProtocols.Http1AndHttp2); });
 builder.Services.AddGrpc();
 builder.Services.AddGrpcReflection();
-builder.Services.Configure<KafkaOptions>(builder.Configuration.GetSection("Kafka"));
+builder.Services.Configure<InventoryKafkaOptions>(builder.Configuration.GetSection("Kafka"));
 //builder.Services.AddHostedService<InventoryConsumer>();
 
 var cs = builder.Configuration.GetConnectionString("Default") 

@@ -2,6 +2,7 @@ using System.Text.Json;
 using Confluent.Kafka;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using PA.Contracts.Models.Events;
 using PA.Inventory.Data;
 
 namespace PA.Inventory.Api.Infrastructure.Kafka
@@ -14,7 +15,7 @@ namespace PA.Inventory.Api.Infrastructure.Kafka
     {
         private readonly IServiceProvider _services;
         private readonly ILogger<InventoryConsumer> _logger;
-        private readonly KafkaOptions _options;
+        private readonly InventoryKafkaOptions _options;
         private IConsumer<string, string>? _consumer;
 
         private static readonly JsonSerializerOptions _json = new JsonSerializerOptions
@@ -22,7 +23,7 @@ namespace PA.Inventory.Api.Infrastructure.Kafka
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
 
-        public InventoryConsumer(IServiceProvider services, IOptions<KafkaOptions> options, ILogger<InventoryConsumer> logger)
+        public InventoryConsumer(IServiceProvider services, IOptions<InventoryKafkaOptions> options, ILogger<InventoryConsumer> logger)
         {
             _services = services;
             _logger = logger;
@@ -59,7 +60,7 @@ namespace PA.Inventory.Api.Infrastructure.Kafka
 
                     if (string.Equals(cr.Topic, _options.TopicOrderCreated, StringComparison.OrdinalIgnoreCase))
                     {
-                        var payload = JsonSerializer.Deserialize<OrderCreatedPayload>(cr.Message.Value, _json);
+                        var payload = JsonSerializer.Deserialize<OrderPayload>(cr.Message.Value, _json);
 
                         if (payload is not null)
                         {
@@ -68,7 +69,7 @@ namespace PA.Inventory.Api.Infrastructure.Kafka
                     }
                     else if (string.Equals(cr.Topic, _options.TopicOrderShipped, StringComparison.OrdinalIgnoreCase))
                     {
-                        var payload = JsonSerializer.Deserialize<OrderShippedPayload>(cr.Message.Value, _json);
+                        var payload = JsonSerializer.Deserialize<OrderPayload>(cr.Message.Value, _json);
 
                         if (payload is not null)
                         {
@@ -128,7 +129,7 @@ namespace PA.Inventory.Api.Infrastructure.Kafka
             }
         }
 
-        private async Task HandleOrderCreatedAsync(OrderCreatedPayload evt, CancellationToken ct)
+        private async Task HandleOrderCreatedAsync(OrderPayload evt, CancellationToken ct)
         {
             using var scope = _services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
@@ -183,7 +184,7 @@ namespace PA.Inventory.Api.Infrastructure.Kafka
             }
         }
 
-        private async Task HandleOrderShippedAsync(OrderShippedPayload evt, CancellationToken ct)
+        private async Task HandleOrderShippedAsync(OrderPayload evt, CancellationToken ct)
         {
             using var scope = _services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
