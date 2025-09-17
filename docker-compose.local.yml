@@ -41,6 +41,19 @@ services:
       - "8080:8080"
     depends_on:
       - redpanda
+  inventory-worker:
+    image: pa.inventory.worker:dev
+    environment:
+      # These match what your APIs/DB use in compose
+      - ConnectionStrings__Default=server=mysql;port=3306;database=pa_mes_inventory;user=root;password=root
+      - Kafka__BootstrapServers=redpanda:9092
+      - Kafka__GroupId=inventory-worker
+      - Kafka__TopicOrderCreated=orders.created
+      - Kafka__TopicOrderShipped=orders.shipped
+      - Kafka__TopicOrderCanceled=orders.canceled
+    depends_on:
+      - mysql
+      - redpanda
 
 volumes:
   mysql_data:
