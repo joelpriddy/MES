@@ -6,7 +6,7 @@ namespace PA.Catalog.Api.Models
         public string? Description { get; set; }
         public bool? IsManufactured { get; set; }
         public string? UnitOfMeasure { get; set; }
-        public string? Flavor { get; set; }
+        public string? Subtype { get; set; }
         public decimal? SizeLb { get; set; }
         public decimal? PriceRetail { get; set; }
         public decimal? PriceWholesale { get; set; }

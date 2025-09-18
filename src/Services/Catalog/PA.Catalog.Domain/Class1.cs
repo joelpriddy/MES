@@ -1,1 +1,0 @@
-namespace PA.Catalog.Domain { public class Class1 { } }

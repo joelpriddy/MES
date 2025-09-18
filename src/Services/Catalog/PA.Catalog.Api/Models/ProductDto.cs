@@ -10,7 +10,7 @@ namespace PA.Catalog.Api.Models
         public string? Description { get; set; }
         public bool IsManufactured { get; set; }
         public string UnitOfMeasure { get; set; } = "lb";
-        public string? Flavor { get; set; }
+        public string? Subtype { get; set; }
         public decimal? SizeLb { get; set; }
         public decimal PriceRetail { get; set; }
         public decimal? PriceWholesale { get; set; }
@@ -24,7 +24,7 @@ namespace PA.Catalog.Api.Models
             Description = model.Description;
             IsManufactured = model.IsManufactured;
             UnitOfMeasure = model.UnitOfMeasure;
-            Flavor = model.Flavor;
+            Subtype = model.Subtype;
             SizeLb = model.SizeLb;
             PriceRetail = model.PriceRetail;
             PriceWholesale = model.PriceWholesale;

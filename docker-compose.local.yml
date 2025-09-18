@@ -44,7 +44,6 @@ services:
   inventory-worker:
     image: pa.inventory.worker:dev
     environment:
-      # These match what your APIs/DB use in compose
       - ConnectionStrings__Default=server=mysql;port=3306;database=pa_mes_inventory;user=root;password=root
       - Kafka__BootstrapServers=redpanda:9092
       - Kafka__GroupId=inventory-worker
@@ -85,7 +84,20 @@ services:
       - redpanda
     ports:
       - "5082:8080"
-
+  catalog-api:
+    build:
+      context: .
+      dockerfile: src/Services/Catalog/PA.Catalog.Api/Dockerfile
+    environment:
+      - HTTP_PORT=8080
+      - ConnectionStrings__Default=server=mysql;port=3306;database=pa_mes_catalog;user=root;password=root
+      - Kafka__BootstrapServers=redpanda:9092
+      - Kafka__GroupId=catalog-api
+    depends_on:
+      - mysql
+      - redpanda
+    ports:
+      - "5080:8080"
 
 volumes:
   mysql_data:

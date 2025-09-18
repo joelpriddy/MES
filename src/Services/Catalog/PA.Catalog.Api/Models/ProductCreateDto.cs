@@ -8,7 +8,7 @@ namespace PA.Catalog.Api.Models
 
         public bool IsManufactured { get; set; }
         public string UnitOfMeasure { get; set; } = "lb";
-        public string? Flavor { get; set; }
+        public string? Subtype { get; set; }
         public decimal? SizeLb { get; set; }
 
         public decimal PriceRetail { get; set; }

@@ -2,18 +2,24 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# copy solution & restore early (optional if you keep solution file at root)
-COPY . .
-RUN dotnet restore "src/Services/Catalog/PA.Catalog.Api/PA.Catalog.Api.csproj"
+COPY PA.MES.sln ./
+COPY src/ ./src/
+COPY tests/ ./tests/
 
-# publish
-RUN dotnet publish "src/Services/Catalog/PA.Catalog.Api/PA.Catalog.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
+WORKDIR /src/src/Services/Catalog/PA.Catalog.Api
+RUN dotnet restore
+RUN dotnet publish -c Release -o /app --no-restore
 
-# Runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+# ---- Run ----
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
-COPY --from=build /app/publish .
-# Health probe port
+COPY --from=build /app ./
+
+# Defaults for compose (override locally as needed)
+ENV HTTP_PORT=8080 \
+    ConnectionStrings__Default="server=mysql;port=3306;database=pa_mes_catalog;user=root;password=root" \
+    Kafka__BootstrapServers="redpanda:9092" \
+    Kafka__GroupId="catalog-api"
+
 EXPOSE 8080
-ENV ASPNETCORE_URLS=http://+:8080
 ENTRYPOINT ["dotnet", "PA.Catalog.Api.dll"]

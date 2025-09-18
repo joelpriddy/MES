@@ -35,7 +35,7 @@ namespace PA.Catalog.Data
                     .IsRequired()
                     .HasMaxLength(16);
 
-                e.Property(x => x.Flavor)
+                e.Property(x => x.Subtype)
                     .HasMaxLength(64);
 
                 e.Property(x => x.SizeLb)

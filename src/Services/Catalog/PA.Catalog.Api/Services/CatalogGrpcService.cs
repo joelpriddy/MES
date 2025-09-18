@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.EntityFrameworkCore;
-using Catalog.V1; // generated from PA.Contracts.Grpc
+using Catalog.V1;
 using PA.Catalog.Data;
 
 namespace PA.Catalog.Api.Services {
@@ -27,7 +27,7 @@ namespace PA.Catalog.Api.Services {
                     Price = (double)entity.PriceRetail,
                     UnitOfMeasure = entity.UnitOfMeasure,
                     Active = entity.Active,
-                    Flavor = entity.Flavor ?? "",
+                    Subtype = entity.Subtype ?? "",
                     SizeLb = (double)(entity.SizeLb ?? 0)
                 };
             }

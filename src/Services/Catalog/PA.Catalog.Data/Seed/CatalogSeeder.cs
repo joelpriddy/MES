@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PA.Catalog.Domain.Models;
+using System.Threading.Tasks;
 
 namespace PA.Catalog.Data.Seed
 {
@@ -22,7 +23,7 @@ namespace PA.Catalog.Data.Seed
                     Description = "Small-batch honeybee fondant, lemongrass flavor",
                     IsManufactured = true,
                     UnitOfMeasure = "lb",
-                    Flavor = "lemongrass",
+                    Subtype = "lemongrass",
                     SizeLb = 5m,
                     PriceRetail = 14.99m,
                     PriceWholesale = 12.50m,
@@ -35,7 +36,7 @@ namespace PA.Catalog.Data.Seed
                     Description = "Small-batch honeybee fondant, lemongrass flavor",
                     IsManufactured = true,
                     UnitOfMeasure = "lb",
-                    Flavor = "lemongrass",
+                    Subtype = "lemongrass",
                     SizeLb = 10m,
                     PriceRetail = 27.99m,
                     PriceWholesale = 24.00m,
@@ -48,7 +49,7 @@ namespace PA.Catalog.Data.Seed
                     Description = "Small-batch honeybee fondant, peppermint flavor",
                     IsManufactured = true,
                     UnitOfMeasure = "lb",
-                    Flavor = "peppermint",
+                    Subtype = "peppermint",
                     SizeLb = 5m,
                     PriceRetail = 14.99m,
                     PriceWholesale = 12.50m,
@@ -61,7 +62,7 @@ namespace PA.Catalog.Data.Seed
                     Description = "Small-batch honeybee fondant, peppermint flavor",
                     IsManufactured = true,
                     UnitOfMeasure = "lb",
-                    Flavor = "peppermint",
+                    Subtype = "peppermint",
                     SizeLb = 10m,
                     PriceRetail = 27.99m,
                     PriceWholesale = 24.00m,

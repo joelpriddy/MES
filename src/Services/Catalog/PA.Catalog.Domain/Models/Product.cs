@@ -1,3 +1,5 @@
+using System;
+
 namespace PA.Catalog.Domain.Models
 {
     public class Product
@@ -12,7 +14,7 @@ namespace PA.Catalog.Domain.Models
         // Classification / options
         public bool IsManufactured { get; set; }          // manufactured vs. resale
         public string UnitOfMeasure { get; set; } = "lb"; // default pounds
-        public string? Flavor { get; set; }               // lemongrass, peppermint
+        public string? Subtype { get; set; }               // lemongrass, peppermint
         public decimal? SizeLb { get; set; }              // 5 or 10
 
         // Pricing (retail/wholesale tiers)

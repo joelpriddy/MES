@@ -8,12 +8,17 @@ using PA.Catalog.Data.Seed;
 using PA.Catalog.Domain.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+var portStr = Environment.GetEnvironmentVariable("HTTP_PORT")
+    ?? builder.Configuration["HTTP_PORT"]
+    ?? "8080";
 
-// Kestrel: HTTP/1.1 + HTTP/2 on port 5080
-builder.WebHost.ConfigureKestrel(o =>
+if (int.TryParse(portStr, out var httpPort))
 {
-    o.ListenAnyIP(5080, lo => lo.Protocols = HttpProtocols.Http1AndHttp2);
-});
+    builder.WebHost.ConfigureKestrel(o =>
+    {
+        o.ListenAnyIP(httpPort, lo => lo.Protocols = HttpProtocols.Http1AndHttp2);
+    });
+}
 
 // Services
 builder.Services.AddGrpc();
@@ -103,7 +108,7 @@ app.MapPost("/products", async (CatalogDbContext db, ProductCreateDto body) =>
         Description = body.Description,
         IsManufactured = body.IsManufactured,
         UnitOfMeasure = body.UnitOfMeasure,
-        Flavor = body.Flavor,
+        Subtype = body.Subtype,
         SizeLb = body.SizeLb,
         PriceRetail = body.PriceRetail,
         PriceWholesale = body.PriceWholesale,
@@ -132,7 +137,7 @@ app.MapPut("/products/{id:long}", async (CatalogDbContext db, long id, ProductUp
     if (body.Description is not null) { entity.Description = body.Description; }
     if (body.IsManufactured.HasValue) { entity.IsManufactured = body.IsManufactured.Value; }
     if (body.UnitOfMeasure is not null) { entity.UnitOfMeasure = body.UnitOfMeasure; }
-    if (body.Flavor is not null) { entity.Flavor = body.Flavor; }
+    if (body.Subtype is not null) { entity.Subtype = body.Subtype; }
     if (body.SizeLb.HasValue) { entity.SizeLb = body.SizeLb; }
     if (body.PriceRetail.HasValue) { entity.PriceRetail = body.PriceRetail.Value; }
     if (body.PriceWholesale.HasValue) { entity.PriceWholesale = body.PriceWholesale; }
