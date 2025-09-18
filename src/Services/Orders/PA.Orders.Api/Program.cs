@@ -14,13 +14,28 @@ var httpPort = 5082;
 
 if (int.TryParse(httpPortEnv, out var parsed)) { httpPort = parsed; }
 
+// CORS
+builder.Services.AddCors(o =>
+{
+    o.AddPolicy("dev-cors", p =>
+    {
+        p.WithOrigins(
+             "http://localhost:5173", // Vite default
+             "http://localhost:3000"  // CRA default
+           )
+         .AllowAnyHeader()
+         .AllowAnyMethod()
+         .AllowCredentials();
+    });
+});
+
+// Web Server
 builder.WebHost.ConfigureKestrel(o =>
 {
     o.ListenAnyIP(httpPort, lo => { lo.Protocols = HttpProtocols.Http1AndHttp2; });
 });
 
-
-// Config
+// Other Config
 var cs = builder.Configuration.GetConnectionString("Default") 
          ?? Environment.GetEnvironmentVariable("PA_ORDERS_CS")
          ?? "server=localhost;port=3306;database=pa_mes_orders;user=root;password=root";
@@ -36,10 +51,10 @@ builder.Services.AddDbContext<PA.Orders.Data.OrdersDbContext>(opt => opt.UseMySq
 var app = builder.Build();
 
 //App setup
-app.AddEndpoints();
+app.UseCors("dev-cors");
 app.UseSwagger();
 app.UseSwaggerUI(c => { c.SwaggerEndpoint("/swagger/v1/swagger.json", "PA.Orders.Api v1"); });
 app.MapGrpcReflectionService();
 app.MapHealthChecks("/healthz");
-app.MapGet("/", () => $"Orders service running ({Assembly.GetExecutingAssembly().GetName().Name}).");
+app.AddEndpoints();
 app.Run();

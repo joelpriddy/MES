@@ -11,6 +11,22 @@ var httpPort = 5081;
 
 if (int.TryParse(httpPortEnv, out var parsed)) { httpPort = parsed; }
 
+// CORS
+builder.Services.AddCors(o =>
+{
+    o.AddPolicy("dev-cors", p =>
+    {
+        p.WithOrigins(
+             "http://localhost:5173", // Vite default
+             "http://localhost:3000"  // CRA default
+           )
+         .AllowAnyHeader()
+         .AllowAnyMethod()
+         .AllowCredentials();
+    });
+});
+
+// Web Server
 builder.WebHost.ConfigureKestrel(o => 
 { 
     o.ListenAnyIP(httpPort, lo => { lo.Protocols = HttpProtocols.Http1AndHttp2; }); 
@@ -35,6 +51,7 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
+app.UseCors("dev-cors");
 app.UseSwagger();
 app.UseSwaggerUI(c => { c.SwaggerEndpoint("/swagger/v1/swagger.json", "PA.Inventory.Api v1"); });
 app.MapGrpcReflectionService();
