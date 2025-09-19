@@ -223,7 +223,7 @@ export interface ProductDto {
   description?: string;
   isManufactured: boolean;
   unitOfMeasure: string;
-  flavor?: string;
+  subtype?: string;
   sizeLb?: number;
   priceRetail: number;
   priceWholesale?: number;

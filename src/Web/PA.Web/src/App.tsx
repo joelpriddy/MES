@@ -941,7 +941,7 @@ function App() {
                   <div style={{ fontSize: 12, color: "#6b7280" }}>
                     SKU: {p.sku} • ID: {p.id} • {p.isManufactured ? "Manufactured" : "Resale"}
                     {p.sizeLb ? ` • ${p.sizeLb}${p.unitOfMeasure}` : ""}
-                    {p.flavor ? ` • ${p.flavor}` : ""}
+                    {p.subtype ? ` • ${p.subtype}` : ""}
                   </div>
                 </button>
               ))
