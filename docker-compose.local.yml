@@ -20,14 +20,12 @@ services:
       - --reserve-memory 0M
       - --node-id 0
       - --check=false
-      # Two listeners:
-      # - PLAINTEXT (inside Docker network): redpanda:9092
-      # - PLAINTEXT_HOST (from Windows host): localhost:19092
+      # Two listeners: inside Docker network - redpanda:9092, from Windows host - localhost:19092
       - --kafka-addr PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:19092
       - --advertise-kafka-addr PLAINTEXT://redpanda:9092,PLAINTEXT_HOST://localhost:19092
     ports:
       - "9092:9092"     # internal clients (other containers) use redpanda:9092
-      - "19092:19092"   # host apps (your APIs on Windows) use localhost:19092
+      - "19092:19092"   # host apps (APIs on Windows) use localhost:19092
       - "9644:9644"
     volumes:
       - redpanda_data:/var/lib/redpanda/data
