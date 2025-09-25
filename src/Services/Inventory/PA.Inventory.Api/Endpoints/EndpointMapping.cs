@@ -1,5 +1,7 @@
 using System.Reflection;
+using System.Reflection.Emit;
 using Microsoft.EntityFrameworkCore;
+using PA.Barcode;
 using PA.Inventory.Api.Models;
 using PA.Inventory.Data;
 using PA.Inventory.Domain.Models;
@@ -44,6 +46,23 @@ namespace PA.Inventory.Api.Endpoints
                 return Results.Ok(new { productId, siteId, available });
             })
             .Produces(StatusCodes.Status200OK);
+
+            app.MapGet("/stock/{id:long}/barcode", async (InventoryDbContext db, long id) =>
+            {
+                var s = await db.StockItems.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+
+                if (s is null) { return Results.NotFound(); }
+
+                // Keep it simple & unambiguous for scanners:
+                // You can evolve this into a more formal URI scheme later.
+                var payload = $"stock:{s.Id}|product:{s.ProductId}|lot:{s.LotNumber}|site:{s.SiteId}|exp:{s.Expiration?.ToString("yyyy-MM-dd") ?? ""}";
+
+                var svg = QrGenerator.GenerateSvg(payload);
+
+                return Results.Text(svg, "image/svg+xml");
+            })
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
 
             return app;
         }

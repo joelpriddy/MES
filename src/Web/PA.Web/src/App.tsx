@@ -76,6 +76,12 @@ function App() {
   const [prodLoading, setProdLoading] = useState(false);
   const [prodFilter, setProdFilter] = useState("");
 
+  // --- Barcode (QR) ---
+  const [qrStockId, setQrStockId] = useState<string>("");
+  const [qrSvg, setQrSvg] = useState<string | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
+  const [qrErr, setQrErr] = useState<string | null>(null);
+
   const onPing = async () => {
     setPingLoading(true);
     try {
@@ -294,6 +300,88 @@ function App() {
       setProdLoading(false);
     }
   };
+
+  async function loadQr(): Promise<void> {
+    setQrErr(null);
+    setQrSvg(null);
+    const id = Number(qrStockId);
+    if (!id || Number.isNaN(id)) {
+      setQrErr("Please enter a valid Stock Item Id.");
+      return;
+    }
+
+    setQrLoading(true);
+    try {
+      const svg = await api.getStockBarcodeSvg(id);
+      setQrSvg(svg);
+    } catch (e: any) {
+      setQrErr(String(e?.message ?? e));
+    } finally {
+      setQrLoading(false);
+    }
+  }
+
+  function printQr(): void {
+    if (!qrSvg) { return; }
+    const w = window.open("", "_blank", "noopener,noreferrer");
+    if (!w) { return; }
+    w.document.write(`
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>QR Code</title>
+        <style>
+          html,body{margin:0;padding:0}
+          .wrap{display:flex;align-items:center;justify-content:center;height:100vh}
+          svg{width:320px;height:320px}
+        </style>
+      </head>
+      <body>
+        <div class="wrap">${qrSvg}</div>
+        <script>window.print();</script>
+      </body>
+    </html>
+  `);
+    w.document.close();
+  }
+
+  async function loadQrFor(id: number): Promise<void> {
+    setQrStockId(String(id));
+    setQrErr(null);
+    setQrSvg(null);
+    setQrLoading(true);
+    try {
+      const svg = await api.getStockBarcodeSvg(id);
+      setQrSvg(svg);
+    } catch (e: any) {
+      setQrErr(String(e?.message ?? e));
+    } finally {
+      setQrLoading(false);
+    }
+  }
+
+  // Barcode preview modal state
+  const [barcodeOpen, setBarcodeOpen] = useState(false);
+  const [barcodeSvg, setBarcodeSvg] = useState<string | null>(null);
+  const [barcodeLoading, setBarcodeLoading] = useState(false);
+  const [barcodeErr, setBarcodeErr] = useState<string | null>(null);
+
+  async function previewBarcodeInModal(stockId: number) {
+    setBarcodeOpen(true);
+    setBarcodeLoading(true);
+    setBarcodeErr(null);
+    setBarcodeSvg(null);
+    try {
+      const svg = await api.getStockBarcodeSvg(stockId);
+      setBarcodeSvg(svg);
+    } catch (e) {
+      setBarcodeErr(String(e));
+    } finally {
+      setBarcodeLoading(false);
+    }
+  }
+
 
   return (
     <div style={{ padding: 24, fontFamily: "system-ui, sans-serif", maxWidth: 1000, margin: "0 auto" }}>
@@ -795,6 +883,7 @@ function App() {
                   <th style={{ textAlign: "left", borderBottom: "1px solid #e5e7eb", padding: "8px" }}>On Hand</th>
                   <th style={{ textAlign: "left", borderBottom: "1px solid #e5e7eb", padding: "8px" }}>Reserved</th>
                   <th style={{ textAlign: "left", borderBottom: "1px solid #e5e7eb", padding: "8px" }}>Updated</th>
+                  <th style={{ textAlign: "left", borderBottom: "1px solid #e5e7eb", padding: "8px" }}>QR</th>
                 </tr>
               </thead>
               <tbody>
@@ -811,6 +900,18 @@ function App() {
                     <td style={{ padding: "8px", borderBottom: "1px solid #f3f4f6" }}>{s.reserved}</td>
                     <td style={{ padding: "8px", borderBottom: "1px solid #f3f4f6" }}>
                       {s.updatedOn ? new Date(s.updatedOn as any).toLocaleString() : "—"}
+                    </td>
+                    <td style={{ padding: "8px", borderBottom: "1px solid #f3f4f6", display: "flex", gap: 8 }}>
+                      <button
+                        onClick={() => loadQrFor(s.id)}
+                        title="Show QR"
+                        style={{ padding: "4px 8px", fontSize: 12 }}
+                      >
+                        QR
+                      </button>
+                      <button onClick={() => previewBarcodeInModal(s.id)} style={{ padding: "4px 8px" }}>
+                        Print
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -961,6 +1062,110 @@ function App() {
         </div>
       </section>
 
+      {/* Barcode (QR) */}
+      <section style={{ marginTop: 24 }}>
+        <h2>Barcode (QR) for Stock Item</h2>
+
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12 }}>
+          <input
+            value={qrStockId}
+            onChange={(e) => setQrStockId(e.target.value)}
+            placeholder="Enter Stock Item Id (e.g., 2)"
+            style={{ flex: 1, padding: "8px 10px" }}
+          />
+          <button onClick={loadQr} disabled={qrLoading} style={{ padding: "8px 12px" }}>
+            {qrLoading ? "Loading..." : "Get QR"}
+          </button>
+          <button onClick={printQr} disabled={!qrSvg} style={{ padding: "8px 12px" }}>
+            Print
+          </button>
+        </div>
+
+        {qrErr && <div style={{ color: "crimson", marginBottom: 8 }}>Error: {qrErr}</div>}
+
+        {qrSvg ? (
+          // Show SVG either via <img src="data:..."> or by injecting the markup.
+          // Using <img> keeps us away from innerHTML. It also prints cleanly.
+          <div style={{ padding: 12, border: "1px solid #e5e7eb", borderRadius: 8, background: "white" }}>
+            <img
+              alt="Stock QR"
+              style={{ width: 240, height: 240, display: "block" }}
+              src={`data:image/svg+xml;utf8,${encodeURIComponent(qrSvg)}`}
+            />
+            <div style={{ marginTop: 8, color: "#6b7280" }}>
+              Preview • Use <strong>Print</strong> to print a label.
+            </div>
+          </div>
+        ) : (
+          !qrLoading && <div style={{ color: "#6b7280" }}>No QR loaded.</div>
+        )}
+      </section>
+
+      {barcodeOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.35)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000
+          }}
+          onClick={() => setBarcodeOpen(false)}
+        >
+          <div
+            style={{
+              background: "white",
+              borderRadius: 8,
+              padding: 16,
+              maxWidth: 560,
+              maxHeight: "85vh",
+              width: "95vw",
+              overflow: "auto",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
+            }}
+            onClick={(e) => { e.stopPropagation(); }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <h3 style={{ margin: 0 }}>Stock Barcode</h3>
+              <button onClick={() => setBarcodeOpen(false)} aria-label="Close">✕</button>
+            </div>
+
+            {barcodeLoading && <div>Loading…</div>}
+            {barcodeErr && <div style={{ color: "crimson" }}>{barcodeErr}</div>}
+
+            {!barcodeLoading && !barcodeErr && barcodeSvg && (
+              <div
+                // render raw SVG
+                dangerouslySetInnerHTML={{ __html: barcodeSvg }}
+                style={{ display: "flex", justifyContent: "center" }}
+              />
+            )}
+
+            <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
+              <button onClick={() => setBarcodeOpen(false)}>Close</button>
+              {!barcodeLoading && barcodeSvg && (
+                <button
+                  onClick={() => {
+                    const blob = new Blob([barcodeSvg], { type: "image/svg+xml;charset=utf-8" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "barcode.svg";
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                >
+                  Download SVG
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -976,6 +1181,8 @@ function StatusBadge({ label, status }: { label: string; status: "idle" | "ok" |
     </span>
   );
 }
+
+
 
 const th: React.CSSProperties = { textAlign: "left", borderBottom: "1px solid #eee", padding: "8px" };
 const td: React.CSSProperties = { borderBottom: "1px solid #f4f4f4", padding: "8px" };

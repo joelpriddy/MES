@@ -1,1 +1,0 @@
-namespace PA.Barcode { public class Class1 { } }

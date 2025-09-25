@@ -14,6 +14,7 @@
         <PackageReference Include="Confluent.Kafka" Version="2.5.1" />
     </ItemGroup>
     <ItemGroup>
+        <ProjectReference Include="..\..\..\PA.Barcode\PA.Barcode.csproj" />
         <ProjectReference Include="..\..\..\PA.Contracts.Models\PA.Contracts.Models.csproj" />
         <ProjectReference Include="..\..\..\PA.Platform.Messaging\PA.Platform.Messaging.csproj" />
         <ProjectReference Include="..\PA.Inventory.Data\PA.Inventory.Data.csproj" />

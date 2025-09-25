@@ -238,3 +238,17 @@ export async function listProducts(): Promise<ProductDto[]> {
   }
   return res.json();
 }
+
+export async function getStockBarcodeSvg(stockId: number): Promise<string> {
+  const res = await fetch(`${INVENTORY_API}/stock/${stockId}/barcode`, {
+    headers: { Accept: "image/svg+xml" }
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`GET /stock/${stockId}/barcode failed: ${res.status} ${res.statusText} ${text}`);
+  }
+
+  // The endpoint returns raw SVG text
+  return res.text();
+}
